@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "study_smart"
+version = "0.0.1"
+authors = [
+  { name="Magdalena Grubesa", email="magdalena.grubesa@student.uva.nl" },
+]
+description = "A smart study planner that builds your revision schedule automatically based on your exam dates and availability."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "shiny",
+    "pandas",
+    "plotnine",
+    "openpyxl",
+]
+
+[project.urls]
+Homepage = "https://github.com/Programming-The-Next-Step-2026/StudySmart"
+Issues = "https://github.com/Programming-The-Next-Step-2026/StudySmart/issues"
+
