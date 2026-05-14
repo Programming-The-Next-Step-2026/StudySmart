@@ -1,3 +1,5 @@
 from .schedule import (
-    available_hours_per_day
+    build_schedule,
+    update_schedule,
+    generate_tips
 )
