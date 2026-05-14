@@ -19,6 +19,9 @@ license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
     "pandas",
+    "google-auth",
+    "google-auth-oauthlib",
+    "google-api-python-client",
 ]
 [project.optional-dependencies]
 dev = [
