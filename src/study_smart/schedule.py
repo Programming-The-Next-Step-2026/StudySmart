@@ -51,7 +51,46 @@ def _detect_overload(hours_per_day, hours_needed):
     total = sum(hours_per_day.values())
     return total < hours_needed, total
 
-def build_schedule(exams, start_date, commitments=None):
+
+def _schedule_reviews(topic_name, first_study_day, exam_date,
+                      review_hours_per_session, allocated, commitments):
+    """Internal — schedules review sessions for a topic after initial study.
+
+    Review intervals are 1, 3, 7, 14 days after first study session.
+    Reviews are skipped if exam has passed or no hours are available.
+    Based on Ebbinghaus (1885) and Murre & Dros (2015).
+    """
+    review_intervals = [1, 3, 7, 14]
+    reviews = []
+
+    for interval in review_intervals:
+        review_date = first_study_day + timedelta(days=interval)
+
+        # skip if review falls on or after exam date
+        if review_date >= exam_date:
+            continue
+
+        # check remaining hours on that day
+        available = _available_hours_per_day(review_date, commitments=commitments)
+        remaining = available - allocated.get(review_date, 0.0)
+
+        if remaining <= 0:
+            continue  # no room — skip this review
+
+        # reduce review hours if not enough room
+        actual_hours = _round_to_half(min(review_hours_per_session, remaining))
+
+        if actual_hours > 0:
+            reviews.append({
+                "date": review_date,
+                "subject": topic_name,
+                "hours": actual_hours,
+                "type": "review"
+            })
+
+    return reviews
+
+def build_schedule(exams, start_date, commitments=None, spaced_repetition=False):
     """
     Build a study schedule working backwards from exam deadlines.
 
@@ -59,29 +98,39 @@ def build_schedule(exams, start_date, commitments=None):
     If there is not enough time, the maximum possible hours are scheduled and
     a warning is returned instead of crashing.
 
+    If spaced_repetition is True, review sessions are scheduled at 1, 3, 7,
+    and 14 days after the first study session for each topic, based on the
+    Ebbinghaus forgetting curve (Ebbinghaus, 1885; Murre & Dros, 2015).
+    30% of total hours are reserved for reviews, 70% for initial study.
+
     Args:
         exams (list): List of dicts, each with:
             - 'name' (str): Subject name.
             - 'date' (datetime.date): Exam date (study stops the day before).
             - 'hours' (float): Total study hours needed for this exam.
+            - 'topics' (list of str, optional): List of topic names. If not
+              provided, the exam name is used as a single topic.
         start_date (datetime.date): First day of the study schedule.
         commitments (dict): Optional. Maps datetime.date to hours already blocked
             (e.g. lectures, sport). Defaults to no commitments.
+        spaced_repetition (bool): If True, schedule review sessions based on
+            the Ebbinghaus forgetting curve. Defaults to False.
 
     Returns:
         tuple: A tuple of (schedule, warnings) where:
-            - schedule (pd.DataFrame): Columns 'date', 'subject', 'hours'.
+            - schedule (pd.DataFrame): Columns 'date', 'subject', 'hours',
+              and 'type' ('initial' or 'review') if spaced_repetition is True.
             - warnings (list of str): One warning per exam that could not be
               fully scheduled due to insufficient time.
 
     Example:
         >>> from datetime import date
         >>> exams = [
-        ...     {"name": "Statistics", "date": date(2025, 6, 5), "hours": 10},
-        ...     {"name": "Neuroimaging", "date": date(2025, 6, 10), "hours": 8},
+        ...     {"name": "Stats", "date": date(2026, 6, 5), "hours": 10,
+        ...      "topics": ["Chapter 1", "Chapter 2", "Chapter 3"]},
         ... ]
-        >>> commitments = {date(2025, 6, 2): 3}
-        >>> schedule, warnings = build_schedule(exams, start_date=date(2025, 6, 1), commitments=commitments)
+        >>> schedule, warnings = build_schedule(exams, start_date=date(2026, 6, 1),
+        ...                                     spaced_repetition=True)
         >>> print(schedule)
         >>> print(warnings)
     """
@@ -89,7 +138,7 @@ def build_schedule(exams, start_date, commitments=None):
         commitments = {}
 
     if not exams:
-        return pd.DataFrame(columns=["date", "subject", "hours"]), []
+        return pd.DataFrame(columns=["date", "subject", "hours", "type"]), []
 
     exams = sorted(exams, key=lambda x: x["date"])
 
@@ -113,31 +162,75 @@ def build_schedule(exams, start_date, commitments=None):
             if start_date <= d < exam["date"]:
                 exam_days.append(d)
 
-        remaining_per_day = {}
-        for d in exam_days:
-            available = _available_hours_per_day(d, commitments=commitments)
-            remaining_per_day[d] = available - allocated[d]
+        # get topics — default to exam name if not provided
+        topics = exam.get("topics", None)
+        if not topics:
+            topics = [exam["name"]]
 
-        overloaded, total = _detect_overload(remaining_per_day, exam["hours"])
-        if overloaded:
-            warnings.append(
-                f"You need {exam['hours']}h for '{exam['name']}' but only have {total:.1f}h available. "
-                f"I scheduled the maximum possible. Consider starting earlier or reducing other subjects."
-            )
-            actual_hours = total
+        if spaced_repetition:
+            # 70% of hours for initial study, 30% for reviews
+            initial_hours = _round_to_half(exam["hours"] * 0.7)
+            review_total = exam["hours"] - initial_hours
+            review_hours_per_session = _round_to_half(review_total / 4)
         else:
-            actual_hours = exam["hours"]
+            initial_hours = exam["hours"]
 
-        exam_schedule = _distribute_hours(actual_hours, exam_days, commitments)
+        # distribute initial hours equally across topics
+        hours_per_topic = _round_to_half(initial_hours / len(topics))
 
-        for day, hours in exam_schedule.items():
-            if hours > 0:
-                rows.append({"date": day, "subject": exam["name"], "hours": hours})
-            allocated[day] += hours
+        for topic in topics:
+            remaining_per_day = {}
+            for d in exam_days:
+                available = _available_hours_per_day(d, commitments=commitments)
+                remaining_per_day[d] = available - allocated[d]
+
+            overloaded, total = _detect_overload(remaining_per_day, hours_per_topic)
+            if overloaded:
+                warnings.append(
+                    f"You need {hours_per_topic}h for '{topic}' but only have {total:.1f}h available. "
+                    f"The maximum possible is scheduled. Consider starting earlier or reducing other subjects."
+                )
+                actual_hours = total
+            else:
+                actual_hours = hours_per_topic
+
+            topic_schedule = _distribute_hours(actual_hours, exam_days, commitments)
+
+            # track first study day for spaced repetition
+            first_study_day = None
+
+            for day, hours in topic_schedule.items():
+                if hours > 0:
+                    rows.append({
+                        "date": day,
+                        "subject": topic,
+                        "hours": hours,
+                        "type": "initial"
+                    })
+                    allocated[day] += hours
+
+                    # record first study day
+                    if first_study_day is None:
+                        first_study_day = day
+
+            # schedule reviews if spaced repetition is enabled
+            if spaced_repetition and first_study_day is not None:
+                reviews = _schedule_reviews(
+                    topic_name=topic,
+                    first_study_day=first_study_day,
+                    exam_date=exam["date"],
+                    review_hours_per_session=review_hours_per_session,
+                    allocated=allocated,
+                    commitments=commitments
+                )
+
+                for review in reviews:
+                    rows.append(review)
+                    allocated[review["date"]] += review["hours"]
 
     return pd.DataFrame(rows), warnings
 
-def update_schedule(schedule, changed_date, hours_change, commitments, exam_dates):
+def update_schedule(schedule, changed_date, hours_change, commitments, exam_dates, spaced_repetition=False):
     """
     Update the study schedule after a commitment is added or cancelled.
 
@@ -152,6 +245,7 @@ def update_schedule(schedule, changed_date, hours_change, commitments, exam_date
         hours_change (float): Hours to add (positive) or remove (negative) on changed_date.
         commitments (dict): Current commitments mapping datetime.date to blocked hours.
         exam_dates (dict): Maps subject name (str) to exam date (datetime.date).
+        spaced_repetition (bool): If True, rebuild schedule with spaced repetition. Defaults to False.
 
     Returns:
         pd.DataFrame: Updated schedule with columns 'date', 'subject', 'hours'.
@@ -166,7 +260,7 @@ def update_schedule(schedule, changed_date, hours_change, commitments, exam_date
         ... })
         >>> exam_dates = {"Stats": date(2025, 6, 3)}
         >>> updated = update_schedule(schedule, date(2025, 6, 2), hours_change=3,
-        ...                           commitments={}, exam_dates=exam_dates)
+        ...                           commitments={}, exam_dates=exam_dates, spaced_repetition=False)
         >>> print(updated)
     """
     # copy commitments to avoid mutating the original
@@ -190,7 +284,8 @@ def update_schedule(schedule, changed_date, hours_change, commitments, exam_date
     new_schedule, _ = build_schedule(
         remaining_exams,
         start_date=changed_date,
-        commitments=commitments
+        commitments=commitments,
+        spaced_repetition=spaced_repetition
     )
 
     # combine old schedule (before changed date) with new schedule
@@ -223,10 +318,10 @@ def generate_tips(schedule, exam_dates, start_date, default_hours=7):
         >>> import pandas as pd
         >>> schedule = pd.DataFrame({
         ...     "date": [date(2025, 5, 13)],
-        ...     "subject": ["Statistics"],
+        ...     "subject": ["Stats"],
         ...     "hours": [6.0],
         ... })
-        >>> exam_dates = {"Statistics": date(2025, 5, 20)}
+        >>> exam_dates = {"Stats": date(2025, 5, 20)}
         >>> tips = generate_tips(schedule, exam_dates, start_date=date(2025, 5, 13))
         >>> for tip in tips:
         ...     print(tip)

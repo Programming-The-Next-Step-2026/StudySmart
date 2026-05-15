@@ -6,10 +6,11 @@ A smart study planner that builds your revision schedule automatically based on 
 - Input your exams with dates and estimated study hours
 - Set daily available study hours and commitments
 - Import commitments automatically from Google Calendar
-- Edit/cancel commitments inside the planner 
+- Edit/ commitments inside the planner 
 - Get an automatically generated color coded revision schedule
 - Receive warnings when there is not enough time for an exam
 - Get personalised study tips based on psychology research
+- Optional spaced repetition schedule based on the Ebbinghaus forgetting curve
 
 ## Installation
 ```bash
@@ -23,10 +24,16 @@ python src/study_smart/app.py
 
 ## Documentation
 
-To view the documentation, run:
+To view the documentation for schedule.py, run:
 
 ```bash
 pdoc --docformat google src/study_smart/schedule.py
+```
+
+To view the documentation for google_calendar.py, run:
+
+```bash
+pdoc --docformat google src/study_smart/google_calendar.py
 ```
 
 ## Testing
@@ -53,4 +60,4 @@ To use the Google Calendar import feature you need:
 Note: `credentials.json` and `token.json` are excluded from version control for security reasons.
 
 ## Study Tips
-Hard-coded tips, based on pyschological research.
+Hard-coded tips, based on psychological research.
