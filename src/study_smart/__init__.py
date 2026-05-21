@@ -1,3 +1,6 @@
 from .schedule import (
-    available_hours_per_day
+    build_schedule,
+    update_schedule,
+    generate_tips
 )
+from .google_calendar import import_commitments_from_google_calendar
