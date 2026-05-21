@@ -1,3 +1,15 @@
+"""
+Unit tests for schedule.py core scheduling functions.
+
+Tests cover:
+- _available_hours_per_day: commitment deduction and minimum floor
+- _round_to_half: rounding behaviour
+- _distribute_hours: proportional distribution and edge cases
+- build_schedule: single and multiple exams, topics, commitments, overload handling
+- build_schedule with spaced repetition: review intervals, skipping, topic defaults
+- generate_tips: active recall, deep understanding, and light load tips
+"""
+
 from datetime import date, timedelta
 import pandas as pd
 from study_smart.schedule import (

@@ -1,3 +1,15 @@
+"""
+Google Calendar integration for StudySmart.
+
+Handles OAuth 2.0 authentication and imports calendar events as study
+commitments. Credentials are stored in credentials.json and token.json
+in the repository root.
+
+Note: Google Calendar import requires the user to set up their own
+OAuth 2.0 credentials via Google Cloud Console. See README for setup
+instructions.
+"""
+
 import os
 from datetime import datetime
 from google.auth.transport.requests import Request
