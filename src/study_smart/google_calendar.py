@@ -7,24 +7,30 @@ from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 
+# paths to credentials files — relative to repo root
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
+CREDENTIALS_PATH = os.path.join(ROOT_DIR, "credentials.json")
+TOKEN_PATH = os.path.join(ROOT_DIR, "token.json")
+
 
 def _get_calendar_service():
     """Internal — authenticates and returns Google Calendar service."""
     creds = None
 
-    if os.path.exists("token.json"):
-        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    if os.path.exists(TOKEN_PATH):
+        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                "credentials.json", SCOPES
+                CREDENTIALS_PATH, SCOPES
             )
             creds = flow.run_local_server(port=0)
 
-        with open("token.json", "w") as token:
+        with open(TOKEN_PATH, "w") as token:
             token.write(creds.to_json())
 
     return build("calendar", "v3", credentials=creds)

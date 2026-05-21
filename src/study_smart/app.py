@@ -4,7 +4,8 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from datetime import date, timedelta
 import plotly.express as px
-from schedule_draft import build_schedule, generate_tips
+from study_smart.schedule import build_schedule, generate_tips
+
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.FLATLY], suppress_callback_exceptions=True)
 
@@ -470,11 +471,12 @@ def delete_commitment(n_clicks_list):
     prevent_initial_call=True
 )
 def import_from_google_calendar(n_clicks, start_date):
+
     try:
+        from study_smart.google_calendar import import_commitments_from_google_calendar
+    
         if not exams:
             return dbc.Alert("Please add exams first!", color="warning"), "📅 Import from Google Calendar"
-
-        from google_calendar_draft import import_commitments_from_google_calendar
 
         end_date = max(date.fromisoformat(e["date"]) for e in exams)
         start = date.fromisoformat(start_date)
