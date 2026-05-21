@@ -1,3 +1,16 @@
+"""
+Unit tests for google_calendar.py.
+
+Tests cover:
+- import_commitments_from_google_calendar: event parsing and commitment calculation
+    - All-day events (no dateTime) are skipped
+    - Multiple events on the same day have their hours summed
+    - Events without a summary fall back to 'Unnamed event'
+
+Note: _get_calendar_service is not tested as it requires live OAuth credentials.
+All tests mock the calendar service to avoid network calls.
+"""
+
 from unittest.mock import patch
 from datetime import date
 from study_smart.google_calendar import import_commitments_from_google_calendar

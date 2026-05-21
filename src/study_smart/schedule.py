@@ -1,3 +1,11 @@
+"""
+Core scheduling logic for StudySmart.
+
+Provides functions to build personalised study schedules from exam
+deadlines and commitments, with optional spaced repetition based on
+the Ebbinghaus forgetting curve.
+"""
+
 from datetime import timedelta
 import pandas as pd
 
@@ -134,9 +142,8 @@ def build_schedule(exams, start_date, commitments=None, spaced_repetition=False)
         ... ]
         >>> schedule, warnings = build_schedule(exams, start_date=date(2026, 6, 1),
         ...                                     spaced_repetition=True)
-        >>> print(schedule)
-        >>> print(warnings)
     """
+
     if commitments is None:
         commitments = {}
 
