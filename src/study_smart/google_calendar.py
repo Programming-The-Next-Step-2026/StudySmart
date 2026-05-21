@@ -56,7 +56,8 @@ def import_commitments_from_google_calendar(start_date, end_date):
             - event_name (dict): Mapping dates to lists of event titles.
 
     Example:
-        >>> from datetime import date, datetime
+        >>> from datetime import date
+        >>> from study_smart.google_calendar import import_commitments_from_google_calendar
         >>> commitments, event_name = import_commitments_from_google_calendar(
         ...     start_date=date(2026, 5, 13),
         ...     end_date=date(2026, 6, 5)

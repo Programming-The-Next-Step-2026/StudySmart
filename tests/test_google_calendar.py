@@ -44,3 +44,22 @@ def test_import_sums_multiple_events_same_day():
         )
         assert commitments[date(2026, 5, 13)] == 3.0
         assert event_names[date(2026, 5, 13)] == ["Lecture", "Gym"]
+
+
+def test_import_unnamed_event_fallback():
+    """Test that events without a summary get 'Unnamed event' as title."""
+    with patch("study_smart.google_calendar._get_calendar_service") as mock_service:
+        mock_service.return_value.events.return_value.list.return_value.execute.return_value = {
+            "items": [
+                {
+                    "start": {"dateTime": "2026-05-13T09:00:00+00:00"},
+                    "end": {"dateTime": "2026-05-13T11:00:00+00:00"}
+                    # no "summary" key
+                }
+            ]
+        }
+        commitments, event_names = import_commitments_from_google_calendar(
+            start_date=date(2026, 5, 13),
+            end_date=date(2026, 5, 14)
+        )
+        assert event_names[date(2026, 5, 13)] == ["Unnamed event"]
