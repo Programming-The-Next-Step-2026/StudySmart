@@ -22,45 +22,6 @@ def _round_to_half(hours):
     """Rounds a number of hours to the nearest 0.5."""
     return round(hours * 2) / 2
 
-
-def _distribute_hours(exam_hours, study_days, commitments=None, allocated=None):
-    """Distributes study hours evenly across days considering remaining capacity."""
-    if commitments is None:
-        commitments = {}
-    if allocated is None:
-        allocated = {}
-
-    if not study_days:
-        return {}
-
-    remaining_capacity = {}
-    for day in study_days:
-        available = _available_hours_per_day(day, commitments=commitments)
-        remaining = available - allocated.get(day, 0.0)
-        if remaining > 0:
-            remaining_capacity[day] = remaining
-
-    if not remaining_capacity:
-        return {}
-
-    total_capacity = sum(remaining_capacity.values())
-
-    if total_capacity == 0:
-        return {}
-
-    schedule = {}
-    for day in list(remaining_capacity.keys())[:-1]:
-        proportion = remaining_capacity[day] / total_capacity
-        schedule[day] = _round_to_half(exam_hours * proportion)
-
-    # last day gets remainder
-    schedule[list(remaining_capacity.keys())[-1]] = _round_to_half(
-        exam_hours - sum(schedule.values())
-    )
-
-    return schedule
-
-
 def _schedule_reviews(topic_name, first_study_day, exam_date,
                       review_hours_per_session, allocated, commitments):
     """Internal — schedules review sessions for a topic after initial study.

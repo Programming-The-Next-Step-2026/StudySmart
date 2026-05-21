@@ -15,7 +15,6 @@ import pandas as pd
 from study_smart.schedule import (
     _available_hours_per_day,
     _round_to_half,
-    _distribute_hours,
     build_schedule,
     generate_tips
 )
@@ -51,41 +50,6 @@ def test__round_to_half():
     assert _round_to_half(3.2) == 3.0
     assert _round_to_half(2.0) == 2.0
 
-# Tests for _distribute_hours
-def test__distribute_hours():
-    """Test that hours are distributed proportionally."""
-    study_days = [date(2026, 5, 13), date(2026, 5, 14)]
-    commitments = {date(2026, 5, 13): 2}  # 5 hours available on 13th, 7 on 14th
-    result = _distribute_hours(12, study_days, commitments)
-    assert result[date(2026, 5, 13)] == 5.0
-    assert result[date(2026, 5, 14)] == 7.0
-
-def test__distribute_hours_rounding():
-    """Test that total hours are exact even when individual days don't divide evenly."""
-    study_days = [date(2026, 5, 13), date(2026, 5, 14), date(2026, 5, 15)]
-    result = _distribute_hours(10, study_days)  # 10/3 = 3.33 per day, doesn't divide evenly
-    for hours in result.values():
-        assert hours % 0.5 == 0.0  # all values must be rounded to nearest 0.5
-    assert sum(result.values()) == 10
-
-def test__distribute_hours_no_study_days():
-    """Test that an empty dictionary is returned when there are no study days available."""
-    result = _distribute_hours(10, [], commitments={})
-    assert result == {}
-    
-def test__distribute_hours_with_fully_blocked_day():
-    """Test that a fully blocked day is excluded from distribution."""
-    study_days = [date(2026, 5, 13), date(2026, 5, 14), date(2026, 5, 15)]
-    commitments = {date(2026, 5, 13): 7}  # May 13 fully blocked
-    result = _distribute_hours(10, study_days, commitments=commitments)
-    assert date(2026, 5, 13) not in result  # blocked day excluded
-
-def test__distribute_hours_all_days_blocked():
-    """Test that empty dict returned when all days are fully blocked."""
-    study_days = [date(2026, 5, 13), date(2026, 5, 14)]
-    commitments = {date(2026, 5, 13): 7, date(2026, 5, 14): 7}
-    result = _distribute_hours(10, study_days, commitments=commitments)
-    assert result == {}
 
 # Tests for build_schedule
 
