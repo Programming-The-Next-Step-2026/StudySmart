@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import timedelta
 import pandas as pd
 
 
@@ -380,6 +380,7 @@ def generate_tips(schedule, exam_dates, start_date, default_hours=7):
             )
 
     # if days are lightly loaded:  suggest studying more per day
+    daily_totals = schedule.groupby("date")["hours"].sum()
     avg_hours = daily_totals.mean()
     if avg_hours < default_hours * 0.5:
         tips.append(
