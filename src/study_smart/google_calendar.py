@@ -1,7 +1,7 @@
 """
 Google Calendar integration for StudySmart.
 
-Provides functions to import calendar events as study commitments
+Provides functions to import and export calendar events as study commitments
 using the Google Calendar API with OAuth 2.0 authentication.
 
 Note: Requires credentials.json in the repository root. See README
@@ -15,7 +15,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 # paths to credentials files — relative to repo root
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -114,4 +114,46 @@ def import_commitments_from_google_calendar(start_date, end_date):
 
     return (commitments, event_name)
 
+
+def export_schedule_to_google_calendar(schedule):
+    """
+    Export study schedule as events to Google Calendar.
+
+    Creates one all-day event per study session in the user's primary calendar.
+
+    Args:
+        schedule (pd.DataFrame): Schedule with columns 'date', 'subject', 'hours', 'type'.
+
+    Returns:
+        int: Number of events created.
+
+    Example:
+        >>> from datetime import date
+        >>> import pandas as pd
+        >>> schedule = pd.DataFrame({
+        ...     "date": [date(2026, 6, 1)],
+        ...     "subject": ["Statistics"],
+        ...     "hours": [3.0],
+        ...     "type": ["initial"]
+        ... })
+        >>> count = export_schedule_to_google_calendar(schedule)
+    """
+    service = _get_calendar_service()
+    count = 0
+
+    for _, row in schedule.iterrows():
+        label = f"📚 {row['subject']} — {row['hours']}hrs"
+        if row["type"] == "review":
+            label += " (review)"
+
+        event = {
+            "summary": label,
+            "start": {"date": str(row["date"])},
+            "end": {"date": str(row["date"])},
+            "description": f"StudySmart study session — {row['type']}"
+        }
+        service.events().insert(calendarId="primary", body=event).execute()
+        count += 1
+
+    return count
 

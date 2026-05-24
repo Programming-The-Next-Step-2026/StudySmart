@@ -43,7 +43,7 @@ app.layout = dbc.Container([
                     dbc.Row([
                         dbc.Col(dbc.Button("💾 Save", id="save-button", color="secondary", size="sm")),
                         dbc.Col(dbc.Button("📂 Load", id="load-button", color="secondary", size="sm")),
-                        dbc.Col(html.Div(id="save-status"), width="auto"), 
+                          dbc.Col(html.Div(id="save-status"), width="auto"), 
                     ], className="mb-3"),
                     html.Div(id="exam-table")
                 ], width=6)
@@ -87,6 +87,8 @@ app.layout = dbc.Container([
                         className="mt-2"
                     ),
                     dbc.Button("Generate / Regenerate schedule", id="generate-button", color="success", className="mt-3 mb-3"),
+                    dbc.Button("📅 Export to Google Calendar", id="export-calendar-button", color="info", className="mt-3 mb-3"),
+                    html.Div(id="export-calendar-status"),
                     html.Div(id="warnings-div"),
                     dcc.Graph(id="schedule-chart"),
                     html.Div(id="legend-div"),
@@ -544,8 +546,31 @@ def import_from_google_calendar(n_clicks, start_date):
 
     except Exception as e:
         return dbc.Alert(f"Could not import: {str(e)}", color="danger"), "📅 Import from Google Calendar"
+    
+# Callback — export to Google Calendar
+@app.callback(
+    Output("export-calendar-status", "children"),
+    Output("export-calendar-button", "children"),
+    Input("export-calendar-button", "n_clicks"),
+    State("schedule-store", "data"),
+    prevent_initial_call=True
+)
+def export_to_google_calendar(n_clicks, stored_schedule):
+    try:
+        from study_smart.google_calendar import export_schedule_to_google_calendar
 
+        if not stored_schedule:
+            return dbc.Alert("Please generate a schedule first!", color="warning"), "📅 Export to Google Calendar"
 
+        schedule = pd.DataFrame(stored_schedule)
+        schedule["date"] = pd.to_datetime(schedule["date"]).dt.date
+
+        count = export_schedule_to_google_calendar(schedule)
+        return dbc.Alert(f"✅ {count} events added to Google Calendar!", color="success"), "📅 Export to Google Calendar"
+
+    except Exception as e:
+        return dbc.Alert(f"Could not export: {str(e)}", color="danger"), "📅 Export to Google Calendar"
+    
 # Callback — navigate weeks
 @app.callback(
     Output("current-week-store", "data"),

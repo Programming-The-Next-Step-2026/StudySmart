@@ -7,6 +7,9 @@ Tests cover:
     - Multiple events on the same day have their hours summed
     - Events without a summary fall back to 'Unnamed event'
 
+- export_schedule_to_google_calendar: event export logic
+
+
 Note: _get_calendar_service is not tested as it requires live OAuth credentials.
 All tests mock the calendar service to avoid network calls.
 """
@@ -76,3 +79,29 @@ def test_import_unnamed_event_fallback():
             end_date=date(2026, 5, 14)
         )
         assert event_names[date(2026, 5, 13)] == ["Unnamed event"]
+
+def test_export_to_google_calendar():
+    """Test that export creates one event per row in schedule."""
+    import pandas as pd
+    from datetime import date
+    from study_smart.google_calendar import export_schedule_to_google_calendar
+
+    with patch("study_smart.google_calendar._get_calendar_service") as mock_service:
+        mock_insert = mock_service.return_value.events.return_value.insert
+        mock_insert.return_value.execute.return_value = {}
+
+        schedule = pd.DataFrame({
+            "date": [date(2026, 6, 1), date(2026, 6, 2)],
+            "subject": ["Stats", "Stats"],
+            "hours": [3.0, 2.0],
+            "type": ["initial", "review"]
+        })
+
+        count = export_schedule_to_google_calendar(schedule)
+        assert count == 2
+        assert mock_insert.call_count == 2
+        # check first event label
+        event_body = mock_insert.call_args_list[0][1]["body"]
+        assert event_body["summary"] == "📚 Stats — 3.0hrs"
+
+
