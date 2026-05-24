@@ -43,6 +43,7 @@ app.layout = dbc.Container([
                     dbc.Row([
                         dbc.Col(dbc.Button("💾 Save", id="save-button", color="secondary", size="sm")),
                         dbc.Col(dbc.Button("📂 Load", id="load-button", color="secondary", size="sm")),
+                        dbc.Col(html.Div(id="save-status"), width="auto"), 
                     ], className="mb-3"),
                     html.Div(id="exam-table")
                 ], width=6)
@@ -329,12 +330,17 @@ def add_exam(n_clicks, name, exam_date, hours, topics):
     })
 
     rows = []
-    for e in exams:
+    for i, e in enumerate(exams):
         rows.append(html.Tr([
             html.Td(e["name"]),
             html.Td(e["date"]),
             html.Td(f"{e['hours']}hrs"),
-            html.Td(", ".join(e["topics"]) if e["topics"] else "—")
+            html.Td(", ".join(e["topics"]) if e["topics"] else "—"),
+            html.Td(dbc.Button("🗑️",
+            id={"type": "delete-exam", "index": i},
+            color="danger",
+            size="sm"
+            ))
         ]))
 
     table = dbc.Table([
@@ -347,21 +353,56 @@ def add_exam(n_clicks, name, exam_date, hours, topics):
 
     return table
 
+@app.callback(
+    Output("exam-table", "children", allow_duplicate=True),
+    Input({"type": "delete-exam", "index": ALL}, "n_clicks"),
+    prevent_initial_call=True
+)
+def delete_exam(n_clicks_list):
+    if not any(n_clicks_list):
+        return dash.no_update
+
+    triggered_index = ctx.triggered_id["index"]
+    exams.pop(triggered_index)
+
+    rows = []
+    for i, e in enumerate(exams):
+        rows.append(html.Tr([
+            html.Td(e["name"]),
+            html.Td(e["date"]),
+            html.Td(f"{e['hours']}hrs"),
+            html.Td(", ".join(e["topics"]) if e["topics"] else "—"),
+            html.Td(dbc.Button("🗑️",
+                id={"type": "delete-exam", "index": i},
+                color="danger",
+                size="sm"
+            ))
+        ]))
+
+    table = dbc.Table([
+        html.Thead(html.Tr([
+            html.Th("Exam"), html.Th("Date"),
+            html.Th("Hours"), html.Th("Topics"), html.Th("")
+        ])),
+        html.Tbody(rows)
+    ], bordered=True, hover=True, striped=True, size="sm")
+
+    return table if exams else html.P("No exams added.")
 
 # Callback — save exams
 @app.callback(
     Output("save-button", "children"),
+    Output("save-status", "children"), 
     Input("save-button", "n_clicks"),
     prevent_initial_call=True
 )
 def save_exams(n_clicks):
     if not exams:
-        return "💾 Save"
+        return "💾 Save", ""
     df = pd.DataFrame(exams)
     df["topics"] = df["topics"].apply(lambda t: ", ".join(t) if isinstance(t, list) else "")
     df.to_excel("my_studysmart.xlsx", index=False)
-    return "✅ Saved!"
-
+    return "💾 Save", "✅ Saved!"
 
 # Callback — load exams
 @app.callback(
@@ -389,18 +430,23 @@ def load_exams(n_clicks):
             })
 
         rows = []
-        for e in exams:
+        for i, e in enumerate(exams):
             rows.append(html.Tr([
                 html.Td(e["name"]),
                 html.Td(e["date"]),
                 html.Td(f"{e['hours']}hrs"),
-                html.Td(", ".join(e["topics"]) if e["topics"] else "—")
-            ]))
+                html.Td(", ".join(e["topics"]) if e["topics"] else "—"),
+                html.Td(dbc.Button("🗑️",
+                id={"type": "delete-exam", "index": i},
+                color="danger",
+                size="sm"
+                ))
+             ])) 
 
         table = dbc.Table([
             html.Thead(html.Tr([
                 html.Th("Exam"), html.Th("Date"),
-                html.Th("Hours"), html.Th("Topics")
+                html.Th("Hours"), html.Th("Topics"), html.Th("")
             ])),
             html.Tbody(rows)
         ], bordered=True, hover=True, striped=True, size="sm")
@@ -629,5 +675,3 @@ def generate_schedule(n_clicks, spaced_repetition, default_hours, start_date):
 if __name__ == "__main__":
     app.run(debug=True)
 
-
-    

@@ -9,6 +9,7 @@ Tests cover:
 - build_commitment_list: commitment display
 - build_tips: study tip generation
 - add_exam callback: validation and global state
+- delete_exam callback: removal of exams
 - add_commitment callback: accumulation and validation
 - delete_commitment callback: removal and recompute
 - save_exams / load_exams: Excel persistence
@@ -29,6 +30,7 @@ from study_smart.app import (
     build_tips,
     build_commitment_list,
     add_exam,
+    delete_exam,
     add_commitment,
     delete_commitment,
     save_exams,
@@ -323,6 +325,19 @@ def test_add_exam_multiple_exams_all_appear_in_table():
     assert isinstance(result, dbc.Table)
     assert len(app.exams) == 2
 
+# Test for delete_exam callback
+
+def test_delete_exam_removes_correct_item():
+    """Test that deleting index 0 removes the first exam."""
+    app.exams.append({"name": "Stats", "date": "2026-06-01", "hours": 10, "topics": []})
+    app.exams.append({"name": "Math", "date": "2026-06-05", "hours": 8, "topics": []})
+
+    with patch("study_smart.app.ctx") as mock_ctx:
+        mock_ctx.triggered_id = {"index": 0}
+        delete_exam([1, None])
+
+    assert len(app.exams) == 1
+    assert app.exams[0]["name"] == "Math"
 
 
 # Tests for add_commitment callback
@@ -451,16 +466,18 @@ def test_build_weekly_view_no_rev_label_when_not_spaced():
 
 def test_save_exams_empty_returns_save_label():
     """Test that saving with no exams returns the original '💾 Save' label."""
-    result = save_exams(1)
-    assert result == "💾 Save"
+    button, status = save_exams(1)
+    assert button == "💾 Save"
+    assert status == ""
 
 
 def test_save_exams_with_exams_returns_saved_label():
     """Test that saving exams returns '✅ Saved!' label."""
     app.exams.append({"name": "Stats", "date": "2026-06-01", "hours": 10, "topics": ["Ch1"]})
     with patch.object(pd.DataFrame, "to_excel"):
-        result = save_exams(1)
-    assert result == "✅ Saved!"
+        button, status = save_exams(1)
+    assert button == "💾 Save"
+    assert status == "✅ Saved!"
 
 
 def test_save_exams_serialises_topics_as_string():
