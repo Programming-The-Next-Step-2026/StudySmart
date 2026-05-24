@@ -6,11 +6,12 @@ A smart study planner that builds your revision schedule automatically based on 
 - Input your exams with dates and estimated study hours
 - Set daily available study hours and commitments
 - Import commitments automatically from Google Calendar
-- Edit/ commitments inside the planner 
-- Get an automatically generated color coded revision schedule
+- Edit commitments inside the planner 
+- Get an automatically generated color coded study schedule
 - Receive warnings when there is not enough time for an exam
+- Export study schedule to Google Calendar
 - Get personalised study tips based on psychology research
-- Optional spaced repetition schedule based on the Ebbinghaus forgetting curve
+- Optional: spaced repetition schedule based on the Ebbinghaus forgetting curve
 
 ## Installation
 ```bash
