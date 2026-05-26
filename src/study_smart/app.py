@@ -1,3 +1,4 @@
+import os
 from dash import Dash, html, dcc, Input, Output, State, ALL, ctx
 import dash
 import dash_bootstrap_components as dbc
@@ -403,7 +404,8 @@ def save_exams(n_clicks):
         return "💾 Save", ""
     df = pd.DataFrame(exams)
     df["topics"] = df["topics"].apply(lambda t: ", ".join(t) if isinstance(t, list) else "")
-    df.to_excel("my_studysmart.xlsx", index=False)
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    df.to_excel(os.path.join(BASE_DIR, "my_studysmart.xlsx"), index=False)
     return "💾 Save", "✅ Saved!"
 
 # Callback — load exams
@@ -415,7 +417,8 @@ def save_exams(n_clicks):
 )
 def load_exams(n_clicks):
     try:
-        df = pd.read_excel("my_studysmart.xlsx")
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        df = pd.read_excel(os.path.join(BASE_DIR, "my_studysmart.xlsx"))
         df["date"] = pd.to_datetime(df["date"]).dt.date
 
         for _, row in df.iterrows():
