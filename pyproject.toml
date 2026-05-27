@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A smart study planner that builds your revision schedule automatically based on your exam dates and availability."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -19,6 +19,10 @@ license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
     "pandas",
+    "plotly",
+    "dash>=2.4.0",
+    "dash-bootstrap-components",
+    "openpyxl",
     "google-auth",
     "google-auth-oauthlib",
     "google-api-python-client",
