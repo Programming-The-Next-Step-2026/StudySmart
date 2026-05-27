@@ -53,7 +53,7 @@ pytest --cov=study_smart tests/
 
 ## Google Calendar Integration
 
-To use the Google Calendar import feature, you need to set up your own Google OAuth credentials:
+To use the Google Calendar import and export feature, you need to set up your own Google OAuth credentials:
 
 1. Go to Google Cloud Console (https://console.cloud.google.com)
 2. Create a new project
