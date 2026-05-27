@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A smart study planner that builds your revision schedule automatically based on your exam dates and availability."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
