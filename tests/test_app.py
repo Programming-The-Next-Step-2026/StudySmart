@@ -103,7 +103,7 @@ def test_get_subject_color_map_topics_share_exam_color():
         {"date": date(2026, 6, 1), "subject": "Ch1", "hours": 2.0, "type": "initial"},
         {"date": date(2026, 6, 1), "subject": "Ch2", "hours": 2.0, "type": "initial"},
     )
-    color_map, exam_colors = get_subject_color_map(schedule, exam_list)
+    color_map, exam_colors = get_subject_color_map(exam_list)
     assert color_map["Ch1"] == color_map["Ch2"]
     assert color_map["Ch1"] == exam_colors["Stats"]
 
@@ -114,7 +114,7 @@ def test_get_subject_color_map_exam_name_in_color_map():
     schedule = make_schedule(
         {"date": date(2026, 6, 1), "subject": "Ch1", "hours": 2.0, "type": "initial"}
     )
-    color_map, _ = get_subject_color_map(schedule, exam_list)
+    color_map, _ = get_subject_color_map(exam_list)
     assert "Stats" in color_map
 
 
@@ -128,7 +128,7 @@ def test_get_subject_color_map_two_exams_different_colors():
         {"date": date(2026, 6, 1), "subject": "Ch1", "hours": 2.0, "type": "initial"},
         {"date": date(2026, 6, 2), "subject": "Algebra", "hours": 2.0, "type": "initial"},
     )
-    _, exam_colors = get_subject_color_map(schedule, exam_list)
+    _, exam_colors = get_subject_color_map(exam_list)
     assert exam_colors["Stats"] != exam_colors["Math"]
 
 
@@ -138,7 +138,7 @@ def test_get_subject_color_map_hsl_format():
     schedule = make_schedule(
         {"date": date(2026, 6, 1), "subject": "Stats", "hours": 2.0, "type": "initial"}
     )
-    _, exam_colors = get_subject_color_map(schedule, exam_list)
+    _, exam_colors = get_subject_color_map(exam_list)
     assert exam_colors["Stats"].startswith("hsl(")
 
 
@@ -148,7 +148,7 @@ def test_get_subject_color_map_single_exam_hue_is_zero():
     schedule = make_schedule(
         {"date": date(2026, 6, 1), "subject": "Stats", "hours": 2.0, "type": "initial"}
     )
-    _, exam_colors = get_subject_color_map(schedule, exam_list)
+    _, exam_colors = get_subject_color_map(exam_list)
     assert exam_colors["Stats"] == "hsl(0, 70%, 50%)"
 
 
