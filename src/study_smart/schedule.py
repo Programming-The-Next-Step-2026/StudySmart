@@ -312,7 +312,7 @@ def generate_tips(schedule, exam_dates, start_date, default_hours=7):
 
     Returns:
         list of str: Personalised tips. May include tips on active recall,
-            deep processing, interleaving, and taking breaks depending on the schedule.
+            deep processing, and taking breaks depending on the schedule.
 
     Example:
         >>> from datetime import date

@@ -1,6 +1,6 @@
 import os
-from dash import Dash, html, dcc, Input, Output, State, ALL, ctx
 import dash
+from dash import Dash, html, dcc, Input, Output, State, ALL, ctx
 import dash_bootstrap_components as dbc
 import pandas as pd
 from datetime import date, timedelta
@@ -105,7 +105,7 @@ app.layout = dbc.Container([
 ], fluid=True)
 
 
-def get_subject_color_map(schedule, exam_list):
+def get_subject_color_map(exam_list):
     """Assign one color per exam — all topics of same exam share color."""
     exam_names = [e["name"] for e in exam_list]
     n = max(len(exam_names), 1)
@@ -121,7 +121,7 @@ def get_subject_color_map(schedule, exam_list):
     for e in exam_list:
         color = exam_colors[e["name"]]
         color_map[e["name"]] = color
-        for t in e["topics"]:  # ← use original topic names, no prefix
+        for t in e["topics"]:  
             color_map[t] = color
 
     return color_map, exam_colors
@@ -237,7 +237,7 @@ def build_weekly_view(schedule, spaced, week_offset=0, color_map=None, exam_colo
                 "minWidth": "0",
                 "borderRight": "0.5px solid var(--color-border-tertiary)",
                 "padding": "8px",
-                "backgroundColor": "var(--color-background-primary)" if not day_rows.empty else "var(--color-background-secondary)"
+                "backgroundColor": "var(--color-background-primary)" 
             })
         )
 
@@ -349,13 +349,14 @@ def add_exam(n_clicks, name, exam_date, hours, topics):
     table = dbc.Table([
         html.Thead(html.Tr([
             html.Th("Exam"), html.Th("Date"),
-            html.Th("Hours"), html.Th("Topics")
+            html.Th("Hours"), html.Th("Topics"), html.Th("")
         ])),
         html.Tbody(rows)
     ], bordered=True, hover=True, striped=True, size="sm")
 
     return table
 
+# Callback — delete exam
 @app.callback(
     Output("exam-table", "children", allow_duplicate=True),
     Input({"type": "delete-exam", "index": ALL}, "n_clicks"),
@@ -532,7 +533,7 @@ def import_from_google_calendar(n_clicks, start_date):
         end_date = max(date.fromisoformat(e["date"]) for e in exams)
         start = date.fromisoformat(start_date)
 
-        imported, event_names = import_commitments_from_google_calendar(start, end_date)
+        imported, _ = import_commitments_from_google_calendar(start, end_date)
 
         for d, h in imported.items():
             if d in commitments:
@@ -662,7 +663,7 @@ def generate_schedule(n_clicks, spaced_repetition, default_hours, start_date):
         warning_cards.append(dbc.Alert(w, color="warning"))
 
     # build color maps — one color per exam shared across all its topics
-    color_map, exam_colors = get_subject_color_map(schedule, exam_list)
+    color_map, exam_colors = get_subject_color_map(exam_list)
 
     # build legend
     legend_items = []
