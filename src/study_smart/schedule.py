@@ -135,16 +135,7 @@ def build_schedule(exams, start_date, commitments=None, spaced_repetition=False)
         for d in all_days:
             if start_date <= d < exam["date"]:
                 exam_days.append(d)
-
-        # warn if exam is too close for full spaced repetition
-        days_until_exam = (exam["date"] - start_date).days
-        if spaced_repetition and days_until_exam < 14:
-            warnings.append(
-                f"'{exam['name']}' is only {days_until_exam} days away — "
-                f"not enough time for full spaced repetition. "
-                f"Some reviews may be skipped."
-            )
-
+    
         # get topics — default to exam name if not provided
         topics = exam.get("topics", None)
         if not topics:
@@ -286,6 +277,20 @@ def build_schedule(exams, start_date, commitments=None, spaced_repetition=False)
         for review in reviews:
             rows.append(review)
             allocated[review["date"]] += review["hours"]
+            
+    # warn if spaced repetition reviews were skipped
+    if spaced_repetition:
+        topics_missing_reviews = []
+        for r in pending_reviews:
+            scheduled_reviews = [row for row in rows if row["subject"] == r["topic"] and row["type"] == "review"]
+            if len(scheduled_reviews) < 4:
+                topics_missing_reviews.append(r["topic"])
+        
+        if topics_missing_reviews:
+            warnings.append(
+                f"Some topics could not get all 4 spaced repetition reviews. "
+                f"Consider starting earlier to allow more review time."
+            )   
 
     return pd.DataFrame(rows), warnings
 
