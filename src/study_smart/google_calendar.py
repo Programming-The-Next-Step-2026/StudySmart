@@ -17,9 +17,16 @@ from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-# paths to credentials files — relative to repo root
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
+def _find_repo_root():
+    """Find repo root by looking for pyproject.toml."""
+    current = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(5):
+        if os.path.exists(os.path.join(current, "pyproject.toml")):
+            return current
+        current = os.path.dirname(current)
+    return os.path.dirname(os.path.abspath(__file__))
+
+ROOT_DIR = _find_repo_root()
 CREDENTIALS_PATH = os.path.join(ROOT_DIR, "credentials.json")
 TOKEN_PATH = os.path.join(ROOT_DIR, "token.json")
 
