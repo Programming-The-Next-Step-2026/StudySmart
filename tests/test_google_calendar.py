@@ -103,5 +103,3 @@ def test_export_to_google_calendar():
         # check first event label
         event_body = mock_insert.call_args_list[0][1]["body"]
         assert event_body["summary"] == "📚 Stats — 3.0hrs"
-
-
