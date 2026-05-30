@@ -24,7 +24,10 @@ def _find_repo_root():
         if os.path.exists(os.path.join(current, "pyproject.toml")):
             return current
         current = os.path.dirname(current)
-    return os.path.dirname(os.path.abspath(__file__))
+    raise FileNotFoundError(
+        "Could not find repository root: no pyproject.toml found within 5 directories of "
+        f"{os.path.abspath(__file__)}. Make sure you are running StudySmart from inside the repository."
+    )
 
 ROOT_DIR = _find_repo_root()
 CREDENTIALS_PATH = os.path.join(ROOT_DIR, "credentials.json")
@@ -107,7 +110,7 @@ def import_commitments_from_google_calendar(start_date, end_date):
         end_time = datetime.fromisoformat(
             event["end"]["dateTime"].replace("Z", "+00:00")
         )
-        duration_hours = (end_time - start_time).seconds / 3600
+        duration_hours = (end_time - start_time).total_seconds() / 3600
         event_date = start_time.date()
         event_title = event.get("summary", "Unnamed event")
 
