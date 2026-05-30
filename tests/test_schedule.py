@@ -14,6 +14,7 @@ import pandas as pd
 from study_smart.schedule import (
     _available_hours_per_day,
     _round_to_half,
+    _schedule_reviews,
     build_schedule,
     generate_tips
 )
@@ -49,6 +50,125 @@ def test__round_to_half():
     assert _round_to_half(3.2) == 3.0
     assert _round_to_half(2.0) == 2.0
 
+# Tests for _schedule_reviews
+
+def test_schedule_reviews_all_four_intervals():
+    """Test that all four review intervals are scheduled when there is plenty of time."""
+    first_study_day = date(2026, 6, 1)
+    exam_date = date(2026, 7, 1)  # 30 days away — all four intervals fit
+    reviews = _schedule_reviews(
+        topic_name="Stats",
+        first_study_day=first_study_day,
+        exam_date=exam_date,
+        review_hours_per_session=0.5,
+        allocated={},
+        commitments={}
+    )
+    review_dates = [r["date"] for r in reviews]
+    assert date(2026, 6, 2) in review_dates   # +1
+    assert date(2026, 6, 4) in review_dates   # +3
+    assert date(2026, 6, 8) in review_dates   # +7
+    assert date(2026, 6, 15) in review_dates  # +14
+
+
+def test_schedule_reviews_correct_subject_and_type():
+    """Test that reviews carry the correct topic name and type field."""
+    reviews = _schedule_reviews(
+        topic_name="Chapter 1",
+        first_study_day=date(2026, 6, 1),
+        exam_date=date(2026, 7, 1),
+        review_hours_per_session=0.5,
+        allocated={},
+        commitments={}
+    )
+    for r in reviews:
+        assert r["subject"] == "Chapter 1"
+        assert r["type"] == "review"
+
+
+def test_schedule_reviews_skips_intervals_after_exam():
+    """Test that reviews on or after the exam date are not scheduled."""
+    # study day is June 20, exam is June 25 — only +1 and +3 fit, +7 and +14 do not
+    first_study_day = date(2026, 6, 20)
+    exam_date = date(2026, 6, 25)
+    reviews = _schedule_reviews(
+        topic_name="Stats",
+        first_study_day=first_study_day,
+        exam_date=exam_date,
+        review_hours_per_session=0.5,
+        allocated={},
+        commitments={}
+    )
+    review_dates = [r["date"] for r in reviews]
+    assert date(2026, 6, 21) in review_dates   # +1 fits
+    assert date(2026, 6, 23) in review_dates   # +3 fits
+    assert date(2026, 6, 27) not in review_dates  # +7 is after exam
+    assert date(2026, 7, 4) not in review_dates   # +14 is after exam
+
+
+def test_schedule_reviews_skips_fully_allocated_days():
+    """Test that review is skipped when the day is already fully allocated."""
+    first_study_day = date(2026, 6, 1)
+    exam_date = date(2026, 7, 1)
+    # fully block the +1 day
+    allocated = {date(2026, 6, 2): 7.0}
+    reviews = _schedule_reviews(
+        topic_name="Stats",
+        first_study_day=first_study_day,
+        exam_date=exam_date,
+        review_hours_per_session=0.5,
+        allocated=allocated,
+        commitments={}
+    )
+    review_dates = [r["date"] for r in reviews]
+    assert date(2026, 6, 2) not in review_dates  # +1 skipped — no room
+    assert date(2026, 6, 4) in review_dates      # +3 still scheduled
+
+
+def test_schedule_reviews_skips_committed_days():
+    """Test that review is skipped when commitments fill the day."""
+    first_study_day = date(2026, 6, 1)
+    exam_date = date(2026, 7, 1)
+    # commitment fills all 7 default hours on the +3 day
+    commitments = {date(2026, 6, 4): 7}
+    reviews = _schedule_reviews(
+        topic_name="Stats",
+        first_study_day=first_study_day,
+        exam_date=exam_date,
+        review_hours_per_session=0.5,
+        allocated={},
+        commitments=commitments
+    )
+    review_dates = [r["date"] for r in reviews]
+    assert date(2026, 6, 4) not in review_dates  # +3 skipped — committed
+
+
+def test_schedule_reviews_hours_capped_at_session_length():
+    """Test that review hours never exceed review_hours_per_session."""
+    reviews = _schedule_reviews(
+        topic_name="Stats",
+        first_study_day=date(2026, 6, 1),
+        exam_date=date(2026, 7, 1),
+        review_hours_per_session=0.5,
+        allocated={},
+        commitments={}
+    )
+    for r in reviews:
+        assert r["hours"] <= 0.5
+
+
+def test_schedule_reviews_no_reviews_when_all_intervals_past_exam():
+    """Test that empty list is returned when exam is too soon for any review."""
+    # exam is tomorrow — all intervals land on or after it
+    reviews = _schedule_reviews(
+        topic_name="Stats",
+        first_study_day=date(2026, 6, 1),
+        exam_date=date(2026, 6, 2),
+        review_hours_per_session=0.5,
+        allocated={},
+        commitments={}
+    )
+    assert reviews == []
 
 # Tests for build_schedule
 
