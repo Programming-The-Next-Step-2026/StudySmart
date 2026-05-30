@@ -36,14 +36,14 @@ def _schedule_reviews(topic_name, first_study_day, exam_date,
     for interval in review_intervals:
         review_date = first_study_day + timedelta(days=interval)
 
-        #skip if review date is on or after exam date
+        # skip if review date is on or after exam date
         if review_date >= exam_date:
             continue
-        #check remaining hours on review date
+        # check remaining hours on review date
         available = _available_hours_per_day(review_date, commitments=commitments)
         remaining = available - allocated.get(review_date, 0.0)
 
-        #no room - skip this review 
+        # no room - skip this review 
         if remaining <= 0:
             continue
 

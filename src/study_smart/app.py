@@ -130,10 +130,7 @@ def build_chart(schedule, spaced, color_map):
     """Build Plotly bar chart from schedule DataFrame."""
     schedule_plot = schedule.copy()
     schedule_plot["date"] = schedule_plot["date"].apply(str)
-    # strip exam prefix for display in chart legend
-    schedule_plot["display_subject"] = schedule_plot["subject"].apply(
-        lambda s: s.split(": ", 1)[-1] if ": " in s else s
-    )
+    
     return px.bar(
         schedule_plot,
         x="date",
@@ -168,29 +165,6 @@ def build_weekly_view(schedule, spaced, week_offset=0, color_map=None, exam_colo
     # apply week offset
     week_start = week_start + timedelta(weeks=week_offset)
     week_end = week_start + timedelta(days=6)
-
-    # build legend
-    legend_items = []
-    for exam_name, color in exam_colors.items():
-        legend_items.append(
-            html.Span([
-                html.Span(style={
-                    "display": "inline-block",
-                    "width": "12px",
-                    "height": "12px",
-                    "borderRadius": "3px",
-                    "backgroundColor": color,
-                    "marginRight": "4px",
-                    "verticalAlign": "middle"
-                }),
-                html.Span(exam_name, style={
-                    "fontSize": "12px",
-                    "marginRight": "16px",
-                    "color": "var(--color-text-secondary)"
-                })
-            ])
-        )
-    legend = html.Div(legend_items, style={"marginBottom": "12px"})
 
     # build week days
     day_cols = []
@@ -257,7 +231,7 @@ def build_weekly_view(schedule, spaced, week_offset=0, color_map=None, exam_colo
         "overflow": "hidden"
     })
 
-    return html.Div([nav, legend, calendar])
+    return html.Div([nav,calendar])
 
 
 def build_tips(schedule, exam_dates, start, default_hours):
@@ -423,6 +397,10 @@ def load_exams(n_clicks):
         df["date"] = pd.to_datetime(df["date"]).dt.date
 
         for _, row in df.iterrows():
+            # skip if this exam name is already loaded
+            if any(e["name"] == row["name"] for e in exams):
+                continue
+
             topic_list = []
             if pd.notna(row["topics"]) and row["topics"]:
                 for t in row["topics"].split(","):
