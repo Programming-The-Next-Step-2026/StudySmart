@@ -16,7 +16,10 @@ All tests mock the calendar service to avoid network calls.
 
 from unittest.mock import patch
 from datetime import date
-from study_smart.google_calendar import import_commitments_from_google_calendar
+from study_smart.google_calendar import (import_commitments_from_google_calendar, export_schedule_to_google_calendar)
+import pandas as pd
+
+
 
 def test_import_skips_allday_events():
     """Test that all-day events are skipped."""
@@ -82,9 +85,6 @@ def test_import_unnamed_event_fallback():
 
 def test_export_to_google_calendar():
     """Test that export creates one event per row in schedule."""
-    import pandas as pd
-    from datetime import date
-    from study_smart.google_calendar import export_schedule_to_google_calendar
 
     with patch("study_smart.google_calendar._get_calendar_service") as mock_service:
         mock_insert = mock_service.return_value.events.return_value.insert
