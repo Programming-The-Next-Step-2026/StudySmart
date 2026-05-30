@@ -50,21 +50,6 @@ To run tests with coverage report:
 ```bash
 pytest --cov=study_smart tests/
 ```
-
-## Google Calendar Integration
-
-To use the Google Calendar import and export feature, you need to set up your own Google OAuth credentials:
-
-1. Go to Google Cloud Console (https://console.cloud.google.com)
-2. Create a new project
-3. Enable the Google Calendar API
-4. Create OAuth 2.0 credentials (Desktop app)
-5. Download the credentials as `credentials.json`
-6. Place `credentials.json` in the root of the repository
-7. On first run, a browser window will open asking you to grant calendar access
-
-Note: `credentials.json` and `token.json` are excluded from version control for security reasons.
-
 ## Google Calendar Setup
 
 StudySmart can import your existing calendar events as commitments and export your study schedule back to Google Calendar. This feature is optional — the app works fully without it.
