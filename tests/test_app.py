@@ -23,6 +23,7 @@ import dash
 from dash import html
 import dash_bootstrap_components as dbc
 import study_smart.app as app
+import plotly.graph_objects as go
 from study_smart.app import (
     get_subject_color_map,
     build_chart,
@@ -68,7 +69,6 @@ def make_exam(name, exam_date, hours, topics=None):
 
 def test_generate_schedule_returns_figure_and_schedule():
     """Test that generate_schedule returns figure and schedule with valid exams."""
-    import plotly.graph_objects as go
     app.exams.append({
         "name": "Stats",
         "date": "2026-06-10",
@@ -99,10 +99,6 @@ def test_generate_schedule_returns_figure_and_schedule():
 def test_get_subject_color_map_topics_share_exam_color():
     """Test that all topics of one exam share the same color."""
     exam_list = [make_exam("Stats", date(2026, 6, 5), 10, ["Ch1", "Ch2"])]
-    schedule = make_schedule(
-        {"date": date(2026, 6, 1), "subject": "Ch1", "hours": 2.0, "type": "initial"},
-        {"date": date(2026, 6, 1), "subject": "Ch2", "hours": 2.0, "type": "initial"},
-    )
     color_map, exam_colors = get_subject_color_map(exam_list)
     assert color_map["Ch1"] == color_map["Ch2"]
     assert color_map["Ch1"] == exam_colors["Stats"]
@@ -111,9 +107,6 @@ def test_get_subject_color_map_topics_share_exam_color():
 def test_get_subject_color_map_exam_name_in_color_map():
     """Test that the exam name itself is included in color_map."""
     exam_list = [make_exam("Stats", date(2026, 6, 5), 10, ["Ch1"])]
-    schedule = make_schedule(
-        {"date": date(2026, 6, 1), "subject": "Ch1", "hours": 2.0, "type": "initial"}
-    )
     color_map, _ = get_subject_color_map(exam_list)
     assert "Stats" in color_map
 
@@ -124,10 +117,6 @@ def test_get_subject_color_map_two_exams_different_colors():
         make_exam("Stats", date(2026, 6, 5), 10, ["Ch1"]),
         make_exam("Math", date(2026, 6, 7), 8, ["Algebra"]),
     ]
-    schedule = make_schedule(
-        {"date": date(2026, 6, 1), "subject": "Ch1", "hours": 2.0, "type": "initial"},
-        {"date": date(2026, 6, 2), "subject": "Algebra", "hours": 2.0, "type": "initial"},
-    )
     _, exam_colors = get_subject_color_map(exam_list)
     assert exam_colors["Stats"] != exam_colors["Math"]
 
@@ -135,9 +124,6 @@ def test_get_subject_color_map_two_exams_different_colors():
 def test_get_subject_color_map_hsl_format():
     """Test that exam colors are returned in hsl(...) string format."""
     exam_list = [make_exam("Stats", date(2026, 6, 5), 10, [])]
-    schedule = make_schedule(
-        {"date": date(2026, 6, 1), "subject": "Stats", "hours": 2.0, "type": "initial"}
-    )
     _, exam_colors = get_subject_color_map(exam_list)
     assert exam_colors["Stats"].startswith("hsl(")
 
@@ -145,9 +131,6 @@ def test_get_subject_color_map_hsl_format():
 def test_get_subject_color_map_single_exam_hue_is_zero():
     """Test that single exam gets hue 0 (first color in the cycle)."""
     exam_list = [make_exam("Stats", date(2026, 6, 5), 10, [])]
-    schedule = make_schedule(
-        {"date": date(2026, 6, 1), "subject": "Stats", "hours": 2.0, "type": "initial"}
-    )
     _, exam_colors = get_subject_color_map(exam_list)
     assert exam_colors["Stats"] == "hsl(0, 70%, 50%)"
 
@@ -156,7 +139,6 @@ def test_get_subject_color_map_single_exam_hue_is_zero():
 
 def test_build_chart_returns_figure():
     """Test that build_chart returns a Plotly Figure object."""
-    import plotly.graph_objects as go
     schedule = make_schedule(
         {"date": date(2026, 6, 1), "subject": "Stats", "hours": 3.0, "type": "initial"}
     )
@@ -544,7 +526,19 @@ def test_load_exams_splits_topics_correctly():
     with patch("study_smart.app.pd.read_excel", return_value=mock_df):
         load_exams(1)
     assert app.exams[0]["topics"] == ["Ch1", "Ch2", "Ch3"]
-
+    
+def test_load_exams_does_not_duplicate_on_second_load():
+    """Test that loading the same file twice does not duplicate exams."""
+    mock_df = pd.DataFrame({
+        "name": ["Stats"],
+        "date": [date(2026, 6, 1)],
+        "hours": [10],
+        "topics": ["Ch1"],
+    })
+    with patch("study_smart.app.pd.read_excel", return_value=mock_df):
+        load_exams(1)
+        load_exams(1)
+    assert len(app.exams) == 1
 
 # Tests for delete_commitment callback
 
